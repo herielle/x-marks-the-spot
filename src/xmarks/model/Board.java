@@ -95,6 +95,11 @@ public final class Board {
         for (int r = 0; r < SIZE; r++) cells[r] = grid[r].clone();
     }
 
+    /** Locks one filled cell so the player can no longer change it. */
+    public void lock(int r, int c) {
+        if (cells[r][c] != 0) given[r][c] = true;
+    }
+
     /** Locks every filled cell. Useful when a generated puzzle becomes the starting point. */
     public void lockFilledCells() {
         for (int r = 0; r < SIZE; r++) {

@@ -1,66 +1,70 @@
 package xmarks;
 
 import xmarks.model.Board;
+import xmarks.model.GameSession;
 import xmarks.model.MoveResult;
 import xmarks.solver.BitmaskSolver;
+import xmarks.storage.SaveManager;
+import xmarks.util.GameTimer;
 
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /** Throwaway console check. Replace with the real launcher once the UI exists. */
 public class Main {
-    public static void main(String[] args) {
-        // 1. Player moves are checked against all four rules.
-        Board board = new Board();
-        System.out.println("Place 5 at (0,0): " + board.place(0, 0, 5).accepted());
-        MoveResult r = board.place(0, 8, 5);
-        System.out.println("Place 5 at (0,8): " + r.message());
-        r = board.place(8, 0, 5);
-        System.out.println("Place 5 at (8,0): " + r.message());
-        r = board.place(4, 4, 5);
-        System.out.println("Place 5 at (4,4): " + r.message());
-        r = board.place(1, 1, 3);
-        System.out.println("Place 3 at (1,1): " + r.accepted());
-        r = board.place(8, 8, 3);
-        System.out.println("Place 3 at (8,8): " + r.message());
-        r = board.place(1, 7, 3);
-        System.out.println("Place 3 at (1,7): " + r.message() + "");
+    public static void main(String[] args) throws Exception {
+        Path dir = Files.createTempDirectory("xmarks-test");
+        SaveManager saves = new SaveManager(dir.resolve("save.txt"));
 
-        // 2. The solver starts from the board exactly as the player left it.
-        BitmaskSolver solver = new BitmaskSolver();
-        long t = System.nanoTime();
-        Optional<int[][]> solved = solver.solve(board);
-        double ms = (System.nanoTime() - t) / 1e6;
-        System.out.println("\nSolved: " + solved.isPresent() + " in " + ms + " ms, "
-                + solver.placementsTried() + " placements");
-        solved.ifPresent(g -> {
-            Board b = new Board();
-            b.load(g);
-            System.out.print(b.toText());
-            verify(g);
-        });
+        // 1. Session basics: entries, mistakes, undo, erase, notes.
+        GameSession s = new GameSession(new Board());
+        int[] changes = {0};
+        s.setOnChange(x -> { changes[0]++; saves.save(x); }); // the wiring the launcher will use
+        s.start();
 
-        // 3. A contradictory board gives no solution.
-        Board bad = Board.parse("5".repeat(1) + "0".repeat(7) + "5" + "0".repeat(72));
-        System.out.println("Contradictory board solvable: " + solver.solve(bad).isPresent());
-    }
+        System.out.println("enter 5 at (0,0): " + s.enter(0, 0, 5).accepted());
+        MoveResult bad = s.enter(0, 8, 5);
+        System.out.println("enter 5 at (0,8): " + bad.message() + "  mistakes=" + s.mistakes() + "/" + GameSession.MAX_MISTAKES);
+        s.enter(4, 4, 7);
+        s.undo();
+        System.out.println("after enter + undo, (4,4) holds: " + s.board().get(4, 4));
+        s.toggleNotesMode();
+        s.enter(2, 2, 4);
+        s.enter(2, 2, 6);
+        System.out.println("notes mask at (2,2): " + s.notesMask(2, 2) + " (expected 40)");
+        s.toggleNotesMode();
+        System.out.println("change events fired: " + changes[0]);
 
-    private static void verify(int[][] g) {
-        boolean ok = true;
-        for (int i = 0; i < 9; i++) {
-            int row = 0, col = 0, box = 0;
-            for (int j = 0; j < 9; j++) {
-                row |= 1 << (g[i][j] - 1);
-                col |= 1 << (g[j][i] - 1);
-                box |= 1 << (g[i / 3 * 3 + j / 3][i % 3 * 3 + j % 3] - 1);
-            }
-            ok &= row == 511 && col == 511 && box == 511;
-        }
-        int d1 = 0, d2 = 0;
-        for (int i = 0; i < 9; i++) {
-            d1 |= 1 << (g[i][i] - 1);
-            d2 |= 1 << (g[i][8 - i] - 1);
-        }
-        ok &= d1 == 511 && d2 == 511;
-        System.out.println("Independent check of all rows, columns, boxes, diagonals: " + ok);
+        // 2. Save file round trip.
+        System.out.println("\n--- save file ---");
+        System.out.print(Files.readString(dir.resolve("save.txt")));
+        GameSession back = saves.load().orElseThrow();
+        System.out.println("--- loaded: board identical = " + back.board().toText().equals(s.board().toText())
+                + ", mistakes = " + back.mistakes());
+
+        // Damaged file is refused.
+        Files.writeString(dir.resolve("save.txt"), "garbage\n");
+        System.out.println("damaged file loads: " + saves.load().isPresent());
+
+        // 3. Solver result goes through the session.
+        saves.save(s);
+        new BitmaskSolver().solve(s.board()).ifPresent(s::applySolution);
+        System.out.println("\nstatus after solve: " + s.status() + ", board complete = " + s.board().isComplete());
+        System.out.println("save file left after finished game: " + saves.exists());
+        System.out.println("entry after the game ended: " + s.enter(1, 1, 1).message());
+
+        // 4. Three rule breaks end the game.
+        GameSession g = new GameSession(new Board());
+        g.enter(0, 0, 1);
+        for (int i = 0; i < 3; i++) g.enter(0, 1, 1);
+        System.out.println("\nafter 3 mistakes: " + g.status() + ", mistakes = " + g.mistakes());
+
+        // 5. Timer.
+        GameSession t = new GameSession(new Board());
+        t.start();
+        Thread.sleep(1100);
+        t.pause();
+        long secs = t.elapsedSeconds();
+        System.out.println("timer after ~1.1 s: " + GameTimer.clock(secs) + " / " + GameTimer.words(secs));
     }
 }

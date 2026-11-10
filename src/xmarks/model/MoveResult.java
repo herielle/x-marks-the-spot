@@ -14,6 +14,10 @@ public record MoveResult(boolean accepted, Rule rule, String message) {
         return new MoveResult(false, rule, digit + " already appears " + rule.phrase() + ".");
     }
 
+    public static MoveResult over() {
+        return new MoveResult(false, null, "The game has ended.");
+    }
+
     public static MoveResult locked() {
         return new MoveResult(false, null, "That cell belongs to the puzzle and cannot be changed.");
     }
