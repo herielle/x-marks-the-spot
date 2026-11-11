@@ -1,0 +1,7 @@
+DEVLOG
+
+11/11/26
+- Added UI, the photos, and made the transition for the Main Menu
+- The buttons can function now and a panel comes out
+- Gameplay panel hasn't been implemented yet
+
