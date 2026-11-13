@@ -9,9 +9,9 @@ public class HowToPlayPanel extends InfoPanel {
             + "An entry that breaks a rule is refused, and the message names the rule involved. "
             + "Each refusal adds a mistake, and the game ends at 3 mistakes.\n\n"
             + "Erase clears the selected cell, Undo takes back your last entry, and the pencil "
-            + "switches to notes so you can jot candidate digits in a cell.\n\n"
-            + "You can ask the program to solve the puzzle at any moment. It continues from the "
-            + "board exactly as you left it.";
+            + "switches to notes for jotting candidate digits. Arrow keys move, Backspace erases, "
+            + "N toggles notes, and Esc pauses.\n\n"
+            + "SOLVE finishes the puzzle from the board exactly as you left it.";
 
     public HowToPlayPanel(Runnable onBack) {
         super("How to play", BODY, onBack);

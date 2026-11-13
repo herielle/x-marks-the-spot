@@ -50,7 +50,7 @@ public class BackdropPanel extends JPanel {
         int w = getWidth(), h = getHeight();
         if (w <= 0 || h <= 0) return;
 
-        BufferedImage art = Theme.image(hills ? "screens/background.png" : "screens/game_background.png");
+        BufferedImage art = Theme.image(hills ? "screens/background.png" : "screens/gameplay_bg.png");
         if (art != null) {
             double dpr = Math.max(1.0, ((Graphics2D) g).getTransform().getScaleX());
             if (composed == null || composedW != w || composedH != h || composedDpr != dpr) {

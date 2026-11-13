@@ -17,10 +17,18 @@ final class Sprite {
 
     final BufferedImage image; // cropped to the faintest visible pixels
     final Rectangle core;      // the solid part, in image coordinates
+    final int offsetX;         // where the crop started inside the original file
+    final int offsetY;
+    final int sourceW;         // size of the original file
+    final int sourceH;
 
-    private Sprite(BufferedImage image, Rectangle core) {
+    private Sprite(BufferedImage image, Rectangle core, int offsetX, int offsetY, int sourceW, int sourceH) {
         this.image = image;
         this.core = core;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.sourceW = sourceW;
+        this.sourceH = sourceH;
     }
 
     /** Loads a sprite from the resources root, or returns null when the file is missing. */
@@ -38,9 +46,13 @@ final class Sprite {
 
     /** Image resized so its core measures coreWidth logical pixels, at dpr device pixels per logical pixel. */
     BufferedImage prescaled(double coreWidth, double dpr) {
-        double k = coreWidth / core.width * dpr;
-        int w = Math.max(1, (int) Math.round(image.getWidth() * k));
-        int h = Math.max(1, (int) Math.round(image.getHeight() * k));
+        return prescaledScale(coreWidth / core.width, dpr);
+    }
+
+    /** Image resized by k logical pixels per source pixel, at dpr device pixels per logical pixel. */
+    BufferedImage prescaledScale(double k, double dpr) {
+        int w = Math.max(1, (int) Math.round(image.getWidth() * k * dpr));
+        int h = Math.max(1, (int) Math.round(image.getHeight() * k * dpr));
         return Theme.scale(image, w, h);
     }
 
@@ -57,7 +69,7 @@ final class Sprite {
         cropped.setRGB(0, 0, sw, sh, px, soft[1] * w + soft[0], w);
         Rectangle core = new Rectangle(solid[0] - soft[0], solid[1] - soft[1],
                 solid[2] - solid[0] + 1, solid[3] - solid[1] + 1);
-        return new Sprite(cropped, core);
+        return new Sprite(cropped, core, soft[0], soft[1], w, h);
     }
 
     /** Smallest box {minX, minY, maxX, maxY} holding every pixel with alpha above the threshold. */

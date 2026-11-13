@@ -20,8 +20,9 @@ import java.util.Set;
  *
  * Art lives in the resources folder, which sits on the classpath, so paths are relative to it:
  *   resources/title.png
- *   resources/screens/background.png, shadow.png, game_background.png
+ *   resources/screens/background.png, shadow.png, gameplay_bg.png
  *   resources/buttons/play_button.png, howtoplay_button.png, credits_button.png, exit_button.png
+ *   resources/buttons/undo.png, erase.png, pen_off.png, pen_on.png
  *   resources/fonts/title.ttf, body.ttf
  * Anything missing falls back to a font installed on the machine or to painting in code.
  */
@@ -37,6 +38,25 @@ public final class Theme {
     public static final Color STAR = new Color(0xE8C9A0);
     public static final Color HILL_TOP = new Color(0xC9D9A8);
     public static final Color HILL_BOTTOM = new Color(0x4A735F);
+
+    // game screen
+    public static final Color FRAME = new Color(0xF8EAE4);      // cream border around the board
+    public static final Color CELL = new Color(0xF6E6E0);       // empty cell
+    public static final Color CELL_DIAGONAL = new Color(0xEFD5CC);
+    public static final Color CELL_PEER = new Color(0xC9DAE6);  // mixed into cells sharing a row, column, box or diagonal
+    public static final Color CELL_SAME = new Color(0xD3E5C3);  // cells holding the selected digit
+    public static final Color CELL_SELECTED = new Color(0xA7C5DB);
+    public static final Color CELL_ERROR = new Color(0xE57F7F);
+    public static final Color GRID_THICK = new Color(0x41647A);
+    public static final Color GRID_THIN = new Color(0x8AA3AE);
+    public static final Color DIGIT_GIVEN = new Color(0x2C4658);
+    public static final Color DIGIT_ENTRY = new Color(0x3D5FB5);
+    public static final Color NOTE = new Color(0x5C7A89);
+    public static final Color PAD = new Color(0xB5B993);
+    public static final Color PAD_BORDER = new Color(0x4C6573);
+    public static final Color CARD = new Color(0xF9E4DC);
+    public static final Color SCORE_BOX = new Color(0xB6C0AA);
+    public static final Color INK = new Color(0x2B4A5A);        // dark text on light glass
 
     private static final Map<String, Font> fonts = new HashMap<>();
     private static final Map<String, BufferedImage> images = new HashMap<>();
@@ -56,6 +76,15 @@ public final class Theme {
         if (custom != null) return custom.deriveFont(style, size);
         String family = pick(Font.SANS_SERIF, "Montserrat", "Segoe UI", "Helvetica Neue", "Arial");
         return new Font(family, style, 12).deriveFont(size);
+    }
+
+    /** Blend of two colors, t = 0 gives a and t = 1 gives b. */
+    public static Color mix(Color a, Color b, double t) {
+        t = Math.max(0, Math.min(1, t));
+        return new Color(
+                (int) Math.round(a.getRed() + (b.getRed() - a.getRed()) * t),
+                (int) Math.round(a.getGreen() + (b.getGreen() - a.getGreen()) * t),
+                (int) Math.round(a.getBlue() + (b.getBlue() - a.getBlue()) * t));
     }
 
     /** Loads an image such as "screens/background.png" from the resources root, or null when it is not there. */

@@ -17,6 +17,11 @@ import java.util.function.Consumer;
 public final class GameSession {
     public static final int MAX_MISTAKES = 3;
 
+    // Score for a won game: start from the base, lose points for time and for each mistake.
+    private static final int SCORE_BASE = 100_000;
+    private static final int SCORE_PER_SECOND = 100;
+    private static final int SCORE_PER_MISTAKE = 5_000;
+
     public enum Status { PLAYING, WON, LOST, SOLVED_BY_PROGRAM }
 
     private record Move(int r, int c, int previous, int next) {}
@@ -144,4 +149,11 @@ public final class GameSession {
     public boolean notesMode() { return notesMode; }
     public int notesMask(int r, int c) { return notes[r][c]; }
     public long elapsedSeconds() { return timer.elapsedSeconds(); }
+
+    /** Points for a finished game. Only a win scores; a loss or a solver finish gives 0. */
+    public int score() {
+        if (status != Status.WON) return 0;
+        long raw = SCORE_BASE - SCORE_PER_SECOND * elapsedSeconds() - (long) SCORE_PER_MISTAKE * mistakes;
+        return (int) Math.max(0, raw);
+    }
 }
